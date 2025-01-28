@@ -112,4 +112,88 @@ const (
 
 	CloseMiniPanelClassicX = 639
 	CloseMiniPanelClassicY = 686
+
+	EquipHelmClassicX = 833
+	EquipHelmClassicY = 110
+
+	EquipAmuletClassicX = 905
+	EquipAmuletClassicY = 130
+
+	EquipLArmClassicX = 700
+	EquipLArmClassicY = 190
+
+	EquipRArmClassicX = 975
+	EquipRArmClassicY = 190
+
+	EquipTorsoClassicX = 833
+	EquipTorsoClassicY = 210
+
+	EquipBeltClassicX = 833
+	EquipBeltClassicY = 300
+
+	EquipGlovesClassicX = 700
+	EquipGlovesClassicY = 315
+
+	EquipBootsClassicX = 975
+	EquipBootsClassicY = 315
+
+	EquipLRingClassicX = 770
+	EquipLRingClassicY = 300
+
+	EquipRRingClassicX = 905
+	EquipRRingClassicY = 300
+
+	EquipHelmX = 1005
+	EquipHelmY = 160
+
+	EquipAmuletX = 1070
+	EquipAmuletY = 205
+
+	EquipLArmX = 885
+	EquipLArmY = 215
+
+	EquipRArmX = 1135
+	EquipRArmY = 215
+
+	EquipTorsoX = 1005
+	EquipTorsoY = 260
+
+	EquipBeltX = 1005
+	EquipBeltY = 340
+
+	EquipGlovesX = 885
+	EquipGlovesY = 325
+
+	EquipBootsX = 1135
+	EquipBootsY = 325
+
+	EquipLRingX = 945
+	EquipLRingY = 340
+
+	EquipRRingX = 1070
+	EquipRRingY = 340
+
+	EquipMercHelmClassicX = 450
+	EquipMercHelmClassicY = 415
+
+	EquipMercLArmClassicX = 315
+	EquipMercLArmClassicY = 195
+
+	EquipMercRArmClassicX = 595
+	EquipMercRArmClassicY = 195
+
+	EquipMercTorsoClassicX = 450
+	EquipMercTorsoClassicY = 195
+
+	EquipMercHelmX = 275
+	EquipMercHelmY = 165
+
+	EquipMercLArmX = 150
+	EquipMercLArmY = 255
+
+	EquipMercRArmX = 400
+	EquipMercRArmY = 255
+
+	EquipMercTorsoX = 275
+	EquipMercTorsoY = 255
 )
