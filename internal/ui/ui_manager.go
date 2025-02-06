@@ -6,6 +6,34 @@ import (
 	"github.com/hectorgimenez/koolo/internal/context"
 )
 
+var (
+	ClassicCoords = map[string]data.Position{
+		"head": {X: EquipHeadClassicX, Y: EquipHeadClassicY},
+		"neck": {X: EquipNeckClassicX, Y: EquipNeckClassicY},
+		"larm": {X: EquipLArmClassicX, Y: EquipLArmClassicY},
+		"rarm": {X: EquipRArmClassicX, Y: EquipRArmClassicY},
+		"tors": {X: EquipTorsClassicX, Y: EquipTorsClassicY},
+		"belt": {X: EquipBeltClassicX, Y: EquipBeltClassicY},
+		"glov": {X: EquipGlovClassicX, Y: EquipGlovClassicY},
+		"feet": {X: EquipFeetClassicX, Y: EquipFeetClassicY},
+		"lrin": {X: EquipLRinClassicX, Y: EquipLRinClassicY},
+		"rrin": {X: EquipRRinClassicX, Y: EquipRRinClassicY},
+	}
+
+	ResurrectedCoords = map[string]data.Position{
+		"head": {X: EquipHeadX, Y: EquipHeadY},
+		"neck": {X: EquipNeckX, Y: EquipNeckY},
+		"larm": {X: EquipLArmX, Y: EquipLArmY},
+		"rarm": {X: EquipRArmX, Y: EquipRArmY},
+		"tors": {X: EquipTorsX, Y: EquipTorsY},
+		"belt": {X: EquipBeltX, Y: EquipBeltY},
+		"glov": {X: EquipGlovX, Y: EquipGlovY},
+		"feet": {X: EquipFeetX, Y: EquipFeetY},
+		"lrin": {X: EquipLRinX, Y: EquipLRinY},
+		"rrin": {X: EquipRRinX, Y: EquipRRinY},
+	}
+)
+
 func GetScreenCoordsForItem(itm data.Item) data.Position {
 	ctx := context.Get()
 	if ctx.GameReader.LegacyGraphics() {

@@ -163,16 +163,23 @@ func buyFullStack(i data.Item) {
 
 func ItemsToBeSold() (items []data.Item) {
 	ctx := context.Get()
+	var keyStacks []data.Item
+
 	for _, itm := range ctx.Data.Inventory.ByLocation(item.LocationInventory) {
 		if itm.IsFromQuest() {
 			continue
 		}
 
-		if itm.Name == item.TomeOfTownPortal || itm.Name == item.TomeOfIdentify || itm.Name == item.Key || itm.Name == "WirtsLeg" {
+		if itm.Name == item.TomeOfTownPortal || itm.Name == item.TomeOfIdentify || itm.Name == "WirtsLeg" {
 			continue
 		}
 
 		if itm.IsRuneword {
+			continue
+		}
+
+		if itm.Name == item.Key {
+			keyStacks = append(keyStacks, itm)
 			continue
 		}
 
@@ -182,6 +189,27 @@ func ItemsToBeSold() (items []data.Item) {
 				continue
 			}
 			items = append(items, itm)
+		}
+	}
+
+	// Handle key stacks
+	if len(keyStacks) > 1 {
+		// Find the stack with the most keys
+		maxQty := 0
+		var keepStack data.Item
+		for _, stack := range keyStacks {
+			qty, _ := stack.FindStat(stat.Quantity, 0)
+			if qty.Value > maxQty {
+				maxQty = qty.Value
+				keepStack = stack
+			}
+		}
+
+		// Mark other stacks to be sold
+		for _, stack := range keyStacks {
+			if stack.UnitID != keepStack.UnitID {
+				items = append(items, stack)
+			}
 		}
 	}
 

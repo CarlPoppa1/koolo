@@ -70,14 +70,16 @@ const (
 	AnvilBtnY    = 450
 
 	MainSkillButtonX        = 596
-	MainSkillButtonXClassic = 330
+	MainSkillButtonXClassic = 300
+
 	MainSkillButtonY        = 693
-	MainSkillButtonYClassic = 693
+	MainSkillButtonYClassic = 690
 
 	SecondarySkillButtonX        = 686
-	SecondarySkillButtonXClassic = 950
+	SecondarySkillButtonXClassic = 955
+
 	SecondarySkillButtonY        = 693
-	SecondarySkillButtonYClassic = 693
+	SecondarySkillButtonYClassic = 690
 
 	GambleRefreshButtonX        = 390
 	GambleRefreshButtonXClassic = 540
@@ -86,16 +88,22 @@ const (
 	GambleRefreshButtonYClassic = 553
 
 	SecondarySkillListFirstSkillX        = 687
-	SecondarySkillListFirstSkillXClassic = 995
-	MainSkillListFirstSkillX             = 592
-	MainSkillListFirstSkillXClassic      = 290
-	SkillListFirstSkillY                 = 590
-	SkillListFirstSkillYClassic          = 590
-	SkillListSkillOffset                 = 45
-	SkillListSkillOffsetClassic          = 60
+	SecondarySkillListFirstSkillXClassic = 996
 
-	FirstMercFromContractorListX = 175
-	FirstMercFromContractorListY = 142
+	MainSkillListFirstSkillX        = 592
+	MainSkillListFirstSkillXClassic = 285
+
+	SkillListFirstSkillY        = 590
+	SkillListFirstSkillYClassic = 595
+
+	SkillListSkillOffset        = 45
+	SkillListSkillOffsetClassic = 60
+
+	FirstMercFromContractorListX        = 175
+	FirstMercFromContractorListXClassic = 410
+
+	FirstMercFromContractorListY      = 142
+	FirstMercFromContractListYClassic = 227
 
 	StashGoldBtnX        = 966
 	StashGoldBtnXClassic = 754
@@ -121,11 +129,11 @@ const (
 	CloseMiniPanelClassicX = 639
 	CloseMiniPanelClassicY = 686
 
-	EquipHelmClassicX = 833
-	EquipHelmClassicY = 110
+	EquipHeadClassicX = 833
+	EquipHeadClassicY = 110
 
-	EquipAmuletClassicX = 905
-	EquipAmuletClassicY = 130
+	EquipNeckClassicX = 905
+	EquipNeckClassicY = 130
 
 	EquipLArmClassicX = 700
 	EquipLArmClassicY = 190
@@ -133,29 +141,29 @@ const (
 	EquipRArmClassicX = 975
 	EquipRArmClassicY = 190
 
-	EquipTorsoClassicX = 833
-	EquipTorsoClassicY = 210
+	EquipTorsClassicX = 833
+	EquipTorsClassicY = 210
 
 	EquipBeltClassicX = 833
 	EquipBeltClassicY = 300
 
-	EquipGlovesClassicX = 700
-	EquipGlovesClassicY = 315
+	EquipGlovClassicX = 700
+	EquipGlovClassicY = 315
 
-	EquipBootsClassicX = 975
-	EquipBootsClassicY = 315
+	EquipFeetClassicX = 975
+	EquipFeetClassicY = 315
 
-	EquipLRingClassicX = 770
-	EquipLRingClassicY = 300
+	EquipLRinClassicX = 770
+	EquipLRinClassicY = 300
 
-	EquipRRingClassicX = 905
-	EquipRRingClassicY = 300
+	EquipRRinClassicX = 905
+	EquipRRinClassicY = 300
 
-	EquipHelmX = 1005
-	EquipHelmY = 160
+	EquipHeadX = 1005
+	EquipHeadY = 160
 
-	EquipAmuletX = 1070
-	EquipAmuletY = 205
+	EquipNeckX = 1070
+	EquipNeckY = 205
 
 	EquipLArmX = 885
 	EquipLArmY = 215
@@ -163,26 +171,26 @@ const (
 	EquipRArmX = 1135
 	EquipRArmY = 215
 
-	EquipTorsoX = 1005
-	EquipTorsoY = 260
+	EquipTorsX = 1005
+	EquipTorsY = 260
 
 	EquipBeltX = 1005
 	EquipBeltY = 340
 
-	EquipGlovesX = 885
-	EquipGlovesY = 325
+	EquipGlovX = 885
+	EquipGlovY = 325
 
-	EquipBootsX = 1135
-	EquipBootsY = 325
+	EquipFeetX = 1135
+	EquipFeetY = 325
 
-	EquipLRingX = 945
-	EquipLRingY = 340
+	EquipLRinX = 945
+	EquipLRinY = 340
 
-	EquipRRingX = 1070
-	EquipRRingY = 340
+	EquipRRinX = 1070
+	EquipRRinY = 340
 
-	EquipMercHelmClassicX = 450
-	EquipMercHelmClassicY = 415
+	EquipMercHeadClassicX = 450
+	EquipMercHeadClassicY = 415
 
 	EquipMercLArmClassicX = 315
 	EquipMercLArmClassicY = 195
@@ -190,11 +198,11 @@ const (
 	EquipMercRArmClassicX = 595
 	EquipMercRArmClassicY = 195
 
-	EquipMercTorsoClassicX = 450
-	EquipMercTorsoClassicY = 195
+	EquipMercTorsClassicX = 450
+	EquipMercTorsClassicY = 195
 
-	EquipMercHelmX = 275
-	EquipMercHelmY = 165
+	EquipMercHeadX = 275
+	EquipMercHeadY = 165
 
 	EquipMercLArmX = 150
 	EquipMercLArmY = 255
@@ -202,6 +210,6 @@ const (
 	EquipMercRArmX = 400
 	EquipMercRArmY = 255
 
-	EquipMercTorsoX = 275
-	EquipMercTorsoY = 255
+	EquipMercTorsX = 275
+	EquipMercTorsY = 255
 )

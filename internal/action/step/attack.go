@@ -102,7 +102,7 @@ func SecondaryAttack(skill skill.ID, target data.UnitID, numOfAttacks int, opts 
 		numOfAttacks:     numOfAttacks,
 		skill:            skill,
 		primaryAttack:    false,
-		isBurstCastSkill: skill == 48, // nova can define any other burst skill here
+		isBurstCastSkill: skill == 48 || skill == 47 || skill == 36, // nova and fireball and firebolt, can define any other burst skill here
 	}
 	for _, o := range opts {
 		o(&settings)
@@ -183,6 +183,11 @@ func attack(settings attackSettings) error {
 			continue
 		}
 
+		_, manaPotsFound := ctx.Data.Inventory.Belt.GetFirstPotion(data.ManaPotion)
+		if ctx.Data.PlayerUnit.MPPercent() < 15 && !manaPotsFound {
+			ctx.Logger.Debug("Out of mana and no mana potions found")
+			return nil // We are out of mana and have no mana potions
+		}
 		performAttack(ctx, settings, monster.Position.X, monster.Position.Y)
 
 		lastRunAt = time.Now()
@@ -199,7 +204,11 @@ func burstAttack(settings attackSettings) error {
 	if !found || !isValidEnemy(monster, ctx) {
 		return nil // Target is not valid, we don't have anything to attack
 	}
-
+	_, manaPotsFound := ctx.Data.Inventory.Belt.GetFirstPotion(data.ManaPotion)
+	if ctx.Data.PlayerUnit.MPPercent() < 15 && !manaPotsFound {
+		ctx.Logger.Debug("Out of mana and no mana potions found")
+		return nil // We are out of mana and have no mana potions
+	}
 	// Initially we try to move to the enemy, later we will check for closer enemies to keep attacking
 	err := ensureEnemyIsInRange(monster, settings.maxDistance, settings.minDistance)
 	if err != nil {

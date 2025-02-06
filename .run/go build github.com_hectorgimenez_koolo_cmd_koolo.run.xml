@@ -1,0 +1,14 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="go build github.com/hectorgimenez/koolo/cmd/koolo" type="GoApplicationRunConfiguration" factoryName="Go Application" nameIsGenerated="true">
+    <module name="koolo" />
+    <working_directory value="$PROJECT_DIR$" />
+    <go_parameters value="-trimpath -tags -static --ldflags -extldflags=&quot;static&quot;" />
+    <sudo value="true" />
+    <kind value="DIRECTORY" />
+    <package value="github.com/hectorgimenez/koolo" />
+    <directory value="$PROJECT_DIR$/cmd/koolo" />
+    <filePath value="$PROJECT_DIR$/cmd/koolo/main.go" />
+    <output_directory value="$PROJECT_DIR$/build" />
+    <method v="2" />
+  </configuration>
+</component>

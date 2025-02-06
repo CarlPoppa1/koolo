@@ -69,7 +69,7 @@ func DropInventoryItem(i data.Item) error {
 		}
 	}
 
-	if i.Location.LocationType == item.LocationInventory {
+	if i.Location.LocationType == item.LocationInventory || i.Location.LocationType == item.LocationEquipped {
 
 		// Check if the inventory is open, if not open it
 		if !ctx.Data.OpenMenus.Inventory {

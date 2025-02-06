@@ -13,7 +13,6 @@ func PreRun(firstRun bool) error {
 	step.SetSkill(skill.Vigor)
 	RecoverCorpse()
 	ManageBelt()
-
 	if firstRun {
 		Stash(firstRun)
 	}
@@ -27,7 +26,7 @@ func PreRun(firstRun bool) error {
 
 	// Identify - either via Cain or Tome
 	IdentifyAll(firstRun)
-
+	EvaluateAllItems()
 	// Stash before vendor
 	Stash(firstRun)
 
@@ -46,7 +45,7 @@ func PreRun(firstRun bool) error {
 	// Leveling related checks
 	if ctx.CharacterCfg.Game.Leveling.EnsurePointsAllocation {
 		ResetStats()
-		EnsureStatPoints()
+		SpendStatPoints()
 		EnsureSkillPoints()
 	}
 
@@ -75,7 +74,7 @@ func InRunReturnTownRoutine() error {
 	}
 
 	IdentifyAll(false)
-
+	EvaluateAllItems()
 	VendorRefill(false, true)
 	Stash(false)
 	Gamble()
@@ -83,7 +82,7 @@ func InRunReturnTownRoutine() error {
 	CubeRecipes()
 
 	if ctx.CharacterCfg.Game.Leveling.EnsurePointsAllocation {
-		EnsureStatPoints()
+		SpendStatPoints()
 		EnsureSkillPoints()
 	}
 

@@ -48,7 +48,6 @@ func (t *Travincal) Run() error {
 	action.Buff()
 
 	councilPosition := t.findCouncilPosition()
-
 	err = action.MoveToCoords(councilPosition)
 	if err != nil {
 		t.ctx.Logger.Warn("Error moving to council area", "error", err)

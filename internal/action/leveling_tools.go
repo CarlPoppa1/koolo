@@ -52,44 +52,96 @@ var uiSkillPagePositionLegacy = [3]data.Position{
 var uiSkillRowPositionLegacy = [6]int{110, 195, 275, 355, 440, 520}
 var uiSkillColumnPositionLegacy = [3]int{690, 770, 855}
 
-func EnsureStatPoints() error {
+func canSpendPoints() bool {
 	ctx := context.Get()
+	statPoints, hasStatPoints := ctx.Data.PlayerUnit.FindStat(stat.StatPoints, 0)
+	skillPoints, hasSkillPoints := ctx.Data.PlayerUnit.FindStat(stat.SkillPoints, 0)
 
-	for {
-		char, isLevelingChar := ctx.Char.(context.LevelingCharacter)
-		_, unusedStatPoints := ctx.Data.PlayerUnit.FindStat(stat.StatPoints, 0)
-		ctx.Logger.Debug(fmt.Sprintf("Checking stat points for %v", char.StatPoints()))
-		if !isLevelingChar || !unusedStatPoints {
-			if ctx.Data.OpenMenus.Character {
-				return step.CloseAllMenus()
-			}
-			return nil
+	// Need 5 stat points per level up
+	haveUnusedStatPoints := hasStatPoints && statPoints.Value >= 5
+	// Need 1 skill point per level up
+	haveUnusedSkillPoints := hasSkillPoints && skillPoints.Value >= 1
+
+	ctx.Logger.Debug(fmt.Sprintf("Stat points: %d, Skill points: %d",
+		statPoints.Value, skillPoints.Value))
+
+	return haveUnusedStatPoints && haveUnusedSkillPoints
+}
+
+func spendStatPoint(statID stat.ID) bool {
+	ctx := context.Get()
+	beforePoints, _ := ctx.Data.PlayerUnit.FindStat(stat.StatPoints, 0)
+
+	if !ctx.Data.OpenMenus.Character {
+		ctx.HID.PressKeyBinding(ctx.Data.KeyBindings.CharacterScreen)
+		utils.Sleep(100)
+	}
+
+	statBtnPosition := uiStatButtonPosition[statID]
+	if ctx.Data.LegacyGraphics {
+		statBtnPosition = uiStatButtonPositionLegacy[statID]
+	}
+
+	ctx.HID.Click(game.LeftButton, statBtnPosition.X, statBtnPosition.Y)
+	utils.Sleep(100)
+
+	afterPoints, _ := ctx.Data.PlayerUnit.FindStat(stat.StatPoints, 0)
+	return beforePoints.Value-afterPoints.Value == 1
+}
+
+func SpendStatPoints() error {
+	ctx := context.Get()
+	char, isLevelingChar := ctx.Char.(context.LevelingCharacter)
+	if !isLevelingChar {
+		return nil
+	}
+
+	statPoints, hasUnusedPoints := ctx.Data.PlayerUnit.FindStat(stat.StatPoints, 0)
+	if !hasUnusedPoints || statPoints.Value == 0 {
+		return nil
+	}
+
+	remainingPoints := statPoints.Value
+	allocations := char.StatPoints()
+
+	for _, allocation := range allocations {
+		if remainingPoints <= 0 {
+			ctx.Logger.Debug("No more stat points to allocate")
+			break
 		}
-		for st, targetPoints := range char.StatPoints() {
-			currentPoints, found := ctx.Data.PlayerUnit.FindStat(st, 0)
-			if !found || currentPoints.Value >= targetPoints {
-				return nil
+
+		if !isValidStat(allocation.Stat) {
+			ctx.Logger.Error(fmt.Sprintf("Invalid stat ID: %v", allocation.Stat))
+			continue
+		}
+
+		// Calculate how many points we can actually spend
+		pointsToSpend := min(allocation.Points, remainingPoints)
+
+		for i := 0; i < pointsToSpend; i++ {
+			if !spendStatPoint(allocation.Stat) {
+				ctx.Logger.Error(fmt.Sprintf("Failed to spend point in %v", allocation.Stat))
+				continue
 			}
 
-			if !ctx.Data.OpenMenus.Character {
-				ctx.HID.PressKeyBinding(ctx.Data.KeyBindings.CharacterScreen)
-				//	return nil
-			}
-
-			var statBtnPosition data.Position
-			if ctx.Data.LegacyGraphics {
-				statBtnPosition = uiStatButtonPositionLegacy[st]
-			} else {
-				statBtnPosition = uiStatButtonPosition[st]
-			}
-
-			utils.Sleep(100)
-			ctx.Logger.Debug(fmt.Sprintf("Adding stat points to %v", st))
-			ctx.HID.Click(game.LeftButton, statBtnPosition.X, statBtnPosition.Y)
-			utils.Sleep(500)
-
+			remainingPoints--
+			currentValue, _ := ctx.Data.PlayerUnit.FindStat(allocation.Stat, 0)
+			ctx.Logger.Debug(fmt.Sprintf("Increased %v to %d (%d points remaining)",
+				allocation.Stat, currentValue.Value, remainingPoints))
 		}
 	}
+
+	return nil
+}
+
+func isValidStat(statID stat.ID) bool {
+	validStats := []stat.ID{stat.Strength, stat.Dexterity, stat.Vitality, stat.Energy}
+	for _, valid := range validStats {
+		if statID == valid {
+			return true
+		}
+	}
+	return false
 }
 
 func EnsureSkillPoints() error {
@@ -200,8 +252,8 @@ func UpdateQuestLog() error {
 
 	ctx.HID.PressKeyBinding(ctx.Data.KeyBindings.QuestLog)
 	utils.Sleep(1000)
-
-	return step.CloseAllMenus()
+	ctx.HID.PressKeyBinding(ctx.Data.KeyBindings.QuestLog)
+	return nil
 }
 func getAvailableSkillKB() []data.KeyBinding {
 	availableSkillKB := make([]data.KeyBinding, 0)
@@ -354,11 +406,12 @@ func calculateSkillPositionInUI(mainSkill bool, skillID skill.ID) (data.Position
 		totalRows = append(totalRows, sk.Desc().Page)
 
 		row++
+
 	}
 
 	slices.Sort(totalRows)
 	totalRows = slices.Compact(totalRows)
-
+	ctx.Logger.Debug(fmt.Sprintf("Total rows: %v", totalRows))
 	// If we don't have any skill of a specific tree, the entire row gets one line down
 	for i, currentRow := range totalRows {
 		if currentRow == targetSkill.Desc().Page {
@@ -366,11 +419,12 @@ func calculateSkillPositionInUI(mainSkill bool, skillID skill.ID) (data.Position
 			break
 		}
 	}
-
+	ctx.Logger.Debug(fmt.Sprintf("Row after skill tree check: %d, Column: %d", row, column))
 	// Scrolls and charges are not in the same list
 	if slices.Contains(scrolls, skillID) {
 		column = skillsWithCharges
-		row = len(totalRows) + 1
+		row = len(totalRows)
+		ctx.Logger.Debug(fmt.Sprintf("Row after scroll check: %d, Column: %d", row, column))
 		for _, skID := range scrolls {
 			if ctx.Data.PlayerUnit.Skills[skID].Quantity > 0 {
 				if skID == skillID {

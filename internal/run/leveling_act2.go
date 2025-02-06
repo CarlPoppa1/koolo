@@ -1,6 +1,7 @@
 package run
 
 import (
+	"fmt"
 	"github.com/hectorgimenez/d2go/pkg/data"
 	"github.com/hectorgimenez/d2go/pkg/data/area"
 	"github.com/hectorgimenez/d2go/pkg/data/item"
@@ -23,6 +24,13 @@ func (a Leveling) act2() error {
 	}
 
 	running = true
+
+	a.ctx.HID.PressKeyBinding(a.ctx.Data.KeyBindings.Inventory)
+	for _, i := range a.ctx.Data.Inventory.ByLocation(item.LocationInventory) {
+		a.ctx.Logger.Debug(fmt.Sprintf("Inventory item: %s", i.Name))
+
+	}
+	a.ctx.HID.PressKeyBinding(a.ctx.Data.KeyBindings.Inventory)
 	// Find Horadric Cube
 	_, found := a.ctx.Data.Inventory.Find("HoradricCube", item.LocationInventory, item.LocationStash)
 	if found {

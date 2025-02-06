@@ -2,10 +2,6 @@ package character
 
 import (
 	"fmt"
-	"log/slog"
-	"sort"
-	"time"
-
 	"github.com/hectorgimenez/d2go/pkg/data"
 	"github.com/hectorgimenez/d2go/pkg/data/difficulty"
 	"github.com/hectorgimenez/d2go/pkg/data/npc"
@@ -14,6 +10,9 @@ import (
 	"github.com/hectorgimenez/koolo/internal/action/step"
 	"github.com/hectorgimenez/koolo/internal/context"
 	"github.com/hectorgimenez/koolo/internal/game"
+	"log/slog"
+	"sort"
+	"time"
 )
 
 type SorceressLeveling struct {
@@ -52,7 +51,7 @@ func (s SorceressLeveling) KillMonsterSequence(
 ) error {
 	completedAttackLoops := 0
 	previousUnitID := 0
-	staticFieldCast := false
+	//staticFieldCast := false
 
 	for {
 		id, found := monsterSelector(*s.Data)
@@ -78,16 +77,16 @@ func (s SorceressLeveling) KillMonsterSequence(
 		}
 
 		// Cast Static Field first if needed
-		if !staticFieldCast && s.shouldCastStaticField(monster) {
-			staticOpts := []step.AttackOption{
-				step.RangedDistance(SorceressLevelingStaticMinDistance, SorceressLevelingStaticMaxDistance),
-			}
+		//if !staticFieldCast && s.shouldCastStaticField(monster) {
+		//	staticOpts := []step.AttackOption{
+		//		step.RangedDistance(SorceressLevelingStaticMinDistance, SorceressLevelingStaticMaxDistance),
+		//	}
 
-			if err := step.SecondaryAttack(skill.StaticField, monster.UnitID, 1, staticOpts...); err == nil {
-				staticFieldCast = true
-				continue
-			}
-		}
+		//	if err := step.SecondaryAttack(skill.StaticField, monster.UnitID, 1, staticOpts...); err == nil {
+		//		staticFieldCast = true
+		//		continue
+		//	}
+		//}
 
 		lvl, _ := s.Data.PlayerUnit.FindStat(stat.Level, 0)
 		if s.Data.PlayerUnit.MPPercent() < 15 && lvl.Value < 15 {
@@ -253,22 +252,43 @@ func (s SorceressLeveling) SkillsToBind() (skill.ID, []skill.ID) {
 	return mainSkill, skillBindings
 }
 
-func (s SorceressLeveling) StatPoints() map[stat.ID]int {
-	lvl, _ := s.Data.PlayerUnit.FindStat(stat.Level, 0)
-	statPoints := make(map[stat.ID]int)
+func (s SorceressLeveling) StatPoints() []context.StatAllocation {
+	//lvl, _ := s.Data.PlayerUnit.FindStat(stat.Level, 0)
+	// Get current stat values
+	curVit, _ := s.Data.PlayerUnit.FindStat(stat.Vitality, 0)
+	curStr, _ := s.Data.PlayerUnit.FindStat(stat.Strength, 0)
+	curEne, _ := s.Data.PlayerUnit.FindStat(stat.Energy, 0)
 
-	if lvl.Value < 11 {
-		statPoints[stat.Vitality] = 9999
-	} else if lvl.Value < 13 {
-		statPoints[stat.Strength] = 25
-	} else {
-		statPoints[stat.Energy] = 80
-		statPoints[stat.Strength] = 60
-		statPoints[stat.Vitality] = 9999
+	// Define complete stat build
+	fullBuild := []context.StatAllocation{
+		{Stat: stat.Vitality, Points: 40},  // First 40 vit
+		{Stat: stat.Strength, Points: 15},  // Then 15 str
+		{Stat: stat.Vitality, Points: 15},  // Then 15 more vit
+		{Stat: stat.Strength, Points: 22},  // Then 22 more str
+		{Stat: stat.Vitality, Points: 999}, // Rest into vit
 	}
 
-	s.Logger.Info("Assigning stat points", "level", lvl.Value, "statPoints", statPoints)
-	return statPoints
+	// Track allocated points
+	allocated := map[stat.ID]int{
+		stat.Vitality: curVit.Value,
+		stat.Strength: curStr.Value,
+		stat.Energy:   curEne.Value,
+	}
+
+	// Return remaining allocations
+	remaining := make([]context.StatAllocation, 0)
+	for _, alloc := range fullBuild {
+		if allocated[alloc.Stat] < alloc.Points {
+			remaining = append(remaining, context.StatAllocation{
+				Stat:   alloc.Stat,
+				Points: alloc.Points - allocated[alloc.Stat],
+			})
+		}
+		allocated[alloc.Stat] = alloc.Points
+	}
+
+	s.Logger.Info("Stat allocation plan", "remaining", remaining)
+	return remaining
 }
 
 func (s SorceressLeveling) SkillPoints() []skill.ID {
@@ -393,7 +413,7 @@ func (s SorceressLeveling) KillCouncil() error {
 	return s.KillMonsterSequence(func(d game.Data) (data.UnitID, bool) {
 		// Exclude monsters that are not council members
 		var councilMembers []data.Monster
-		for _, m := range d.Monsters {
+		for _, m := range d.Monsters.Enemies() {
 			if m.Name == npc.CouncilMember || m.Name == npc.CouncilMember2 || m.Name == npc.CouncilMember3 {
 				councilMembers = append(councilMembers, m)
 			}

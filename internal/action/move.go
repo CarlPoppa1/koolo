@@ -2,12 +2,11 @@ package action
 
 import (
 	"fmt"
+	"github.com/hectorgimenez/koolo/internal/pather"
+	"github.com/hectorgimenez/koolo/internal/utils"
 	"log/slog"
 	"sort"
 	"time"
-
-	"github.com/hectorgimenez/koolo/internal/pather"
-	"github.com/hectorgimenez/koolo/internal/utils"
 
 	"github.com/hectorgimenez/d2go/pkg/data"
 	"github.com/hectorgimenez/d2go/pkg/data/area"
@@ -53,7 +52,22 @@ func ensureAreaSync(ctx *context.Status, expectedArea area.ID) error {
 func MoveToArea(dst area.ID) error {
 	ctx := context.Get()
 	ctx.SetLastAction("MoveToArea")
+	ctx.CurrentGame.AreaCorrection.Enabled = false
+	var isEntrance bool
 
+	defer func() {
+		// For open areas (non-entrance transitions), disable area correction
+		if !isEntrance {
+			if ctx.Data.PlayerUnit.Area == dst {
+				ctx.CurrentGame.AreaCorrection.ExpectedArea = dst
+				ctx.CurrentGame.AreaCorrection.Enabled = false
+			}
+		} else {
+			// For entrances
+			ctx.CurrentGame.AreaCorrection.ExpectedArea = dst
+			ctx.CurrentGame.AreaCorrection.Enabled = true
+		}
+	}()
 	if err := ensureAreaSync(ctx, ctx.Data.PlayerUnit.Area); err != nil {
 		return err
 	}
@@ -73,6 +87,7 @@ func MoveToArea(dst area.ID) error {
 	for _, a := range ctx.Data.AdjacentLevels {
 		if a.Area == dst {
 			lvl = a
+			isEntrance = a.IsEntrance
 			break
 		}
 	}
@@ -185,6 +200,11 @@ func MoveToArea(dst area.ID) error {
 
 func MoveToCoords(to data.Position) error {
 	ctx := context.Get()
+	ctx.CurrentGame.AreaCorrection.Enabled = false
+	defer func() {
+		ctx.CurrentGame.AreaCorrection.ExpectedArea = ctx.Data.AreaData.Area
+		ctx.CurrentGame.AreaCorrection.Enabled = true
+	}()
 
 	if err := ensureAreaSync(ctx, ctx.Data.PlayerUnit.Area); err != nil {
 		return err
@@ -209,7 +229,7 @@ func MoveTo(toFunc func() (data.Position, bool)) error {
 		utils.Sleep(500)
 	}
 
-	openedDoors := make(map[object.Name]data.Position)
+	//openedDoors := make(map[object.Name]data.Position)
 	previousIterationPosition := data.Position{}
 	lastMovement := false
 
@@ -231,18 +251,20 @@ func MoveTo(toFunc func() (data.Position, bool)) error {
 		}
 
 		// Check for doors blocking path
+		topath, _, _ := ctx.PathFinder.GetPath(to)
+
+		ctx.Logger.Debug(fmt.Sprintf("Path to destination %v", topath))
+		//objects := ctx.Data.Areas[lvl.Area].Objects
 		for _, o := range ctx.Data.Objects {
-			if o.IsDoor() && ctx.PathFinder.DistanceFromMe(o.Position) < 10 && openedDoors[o.Name] != o.Position {
-				if o.Selectable {
-					ctx.Logger.Info("Door detected and teleport is not available, trying to open it...")
-					openedDoors[o.Name] = o.Position
-					err := step.InteractObject(o, func() bool {
+			if o.IsDoor() && o.Selectable {
+
+				if topath.Intersects(*ctx.Data, o.Position, o.Desc().SizeX) {
+					ctx.Logger.Debug(fmt.Sprintf("Door along path %v Desc %v", o, o.Desc()))
+					step.MoveTo(o.Position)
+					step.InteractObject(o, func() bool {
 						obj, found := ctx.Data.Objects.FindByID(o.ID)
 						return found && !obj.Selectable
 					})
-					if err != nil {
-						return err
-					}
 				}
 			}
 		}

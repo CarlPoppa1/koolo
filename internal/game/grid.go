@@ -18,6 +18,7 @@ type Grid struct {
 	Width         int
 	Height        int
 	CollisionGrid [][]CollisionType
+	MultiLevel    bool
 }
 
 func NewGrid(rawCollisionGrid [][]CollisionType, offsetX, offsetY int) *Grid {

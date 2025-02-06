@@ -2,14 +2,16 @@ package run
 
 import (
 	"fmt"
-
 	"github.com/hectorgimenez/d2go/pkg/data"
 	"github.com/hectorgimenez/d2go/pkg/data/area"
+	"github.com/hectorgimenez/d2go/pkg/data/difficulty"
 	"github.com/hectorgimenez/d2go/pkg/data/item"
 	"github.com/hectorgimenez/d2go/pkg/data/npc"
 	"github.com/hectorgimenez/d2go/pkg/data/object"
+	"github.com/hectorgimenez/d2go/pkg/data/quest"
 	"github.com/hectorgimenez/d2go/pkg/data/stat"
 	"github.com/hectorgimenez/koolo/internal/action"
+	"github.com/hectorgimenez/koolo/internal/config"
 	"github.com/hectorgimenez/koolo/internal/game"
 	"github.com/hectorgimenez/koolo/internal/ui"
 	"github.com/hectorgimenez/koolo/internal/utils"
@@ -23,7 +25,26 @@ func (a Leveling) act1() error {
 	}
 
 	running = true
-
+	if lvl, _ := a.ctx.Data.PlayerUnit.FindStat(stat.Level, 0); lvl.Value == 1 {
+		a.ctx.CharacterCfg.Game.Difficulty = difficulty.Normal
+		a.ctx.CharacterCfg.MaxGameLength = 750
+		a.ctx.CharacterCfg.BackToTown.EquipmentBroken = false
+		a.ctx.CharacterCfg.BackToTown.MercDied = false
+		a.ctx.CharacterCfg.BackToTown.NoHpPotions = false
+		a.ctx.CharacterCfg.BackToTown.NoMpPotions = false
+		a.ctx.CharacterCfg.Inventory.InventoryLock = [][]int{
+			{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		}
+		a.ctx.CharacterCfg.Character.UseMerc = false
+		a.ctx.CharacterCfg.Health.ChickenAt = 10
+		a.ctx.CharacterCfg.Health.ManaPotionAt = 65
+		a.ctx.CharacterCfg.Health.HealingPotionAt = 80
+		a.ctx.CharacterCfg.Health.RejuvPotionAtLife = 50
+		config.SaveSupervisorConfig(a.ctx.Name, a.ctx.CharacterCfg)
+	}
 	if a.ctx.Data.PlayerUnit.TotalPlayerGold() < 2000 {
 		a.ctx.CharacterCfg.BackToTown.NoHpPotions = false
 		a.ctx.CharacterCfg.BackToTown.NoMpPotions = false
@@ -33,7 +54,7 @@ func (a Leveling) act1() error {
 	}
 
 	// clear den of evil
-	if lvl, _ := a.ctx.Data.PlayerUnit.FindStat(stat.Level, 0); lvl.Value < 4 {
+	if lvl, _ := a.ctx.Data.PlayerUnit.FindStat(stat.Level, 0); lvl.Value < 3 {
 		a.ctx.Logger.Debug("Current lvl %s under 3 - Leveling in Den of Evil")
 		a.denOfEvil()
 		fmt.Errorf("den of Evil finished")
@@ -44,13 +65,21 @@ func (a Leveling) act1() error {
 		fmt.Errorf("stony field finished")
 	}
 
-	// do Countess Runs until level 17
-	if lvl, _ := a.ctx.Data.PlayerUnit.FindStat(stat.Level, 0); lvl.Value < 18 {
+	// do Countess Runs until level 14
+	if lvl, _ := a.ctx.Data.PlayerUnit.FindStat(stat.Level, 0); lvl.Value < 14 {
 		a.countess()
 		fmt.Errorf("Countess run finished")
 	}
 
-	return a.andariel()
+	if a.ctx.Data.Quests[quest.Act1SistersToTheSlaughter].Completed() {
+		action.ReturnTown()
+		action.InteractNPC(npc.Warriv)
+		a.ctx.HID.KeySequence(win.VK_HOME, win.VK_DOWN, win.VK_RETURN)
+
+		return nil
+	} else {
+		return a.andariel()
+	}
 }
 
 func (a Leveling) bloodMoor() error {

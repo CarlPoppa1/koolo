@@ -11,7 +11,7 @@ const (
 	RightButton MouseButton = win.MK_RBUTTON
 	LeftButton  MouseButton = win.MK_LBUTTON
 
-	ShiftKey ModifierKey = win.VK_SHIFT
+	ShiftKey ModifierKey = win.VK_RSHIFT
 	CtrlKey  ModifierKey = win.VK_CONTROL
 )
 

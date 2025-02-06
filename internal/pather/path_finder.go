@@ -2,6 +2,7 @@ package pather
 
 import (
 	"fmt"
+	"log/slog"
 	"math"
 
 	"github.com/hectorgimenez/d2go/pkg/data"
@@ -12,18 +13,20 @@ import (
 )
 
 type PathFinder struct {
-	gr   *game.MemoryReader
-	data *game.Data
-	hid  *game.HID
-	cfg  *config.CharacterCfg
+	gr     *game.MemoryReader
+	data   *game.Data
+	hid    *game.HID
+	cfg    *config.CharacterCfg
+	logger *slog.Logger
 }
 
-func NewPathFinder(gr *game.MemoryReader, data *game.Data, hid *game.HID, cfg *config.CharacterCfg) *PathFinder {
+func NewPathFinder(gr *game.MemoryReader, data *game.Data, hid *game.HID, cfg *config.CharacterCfg, logger *slog.Logger) *PathFinder {
 	return &PathFinder{
-		gr:   gr,
-		data: data,
-		hid:  hid,
-		cfg:  cfg,
+		gr:     gr,
+		data:   data,
+		hid:    hid,
+		cfg:    cfg,
+		logger: logger,
 	}
 }
 
@@ -125,23 +128,38 @@ func (pf *PathFinder) mergeGrids(to data.Position) (*game.Grid, error) {
 			endY1 := origin.OffsetY + len(origin.Grid.CollisionGrid)
 			endX2 := destination.OffsetX + len(destination.Grid.CollisionGrid[0])
 			endY2 := destination.OffsetY + len(destination.Grid.CollisionGrid)
+			//pf.logger.Debug(fmt.Sprintf("Origin OffsetX: %d, OffsetY: %d", origin.OffsetX, origin.OffsetY))
+			//pf.logger.Debug(fmt.Sprintf("Destination OffsetX: %d, OffsetY: %d", destination.OffsetX, destination.OffsetY))
+			//pf.logger.Debug(fmt.Sprintf("Origin Width: %d, Height: %d", len(origin.Grid.CollisionGrid[0]), len(origin.Grid.CollisionGrid)))
+			//pf.logger.Debug(fmt.Sprintf("Destination Width: %d, Height: %d", len(destination.Grid.CollisionGrid[0]), len(destination.Grid.CollisionGrid)))
 
+			// Calculate the minimum and maximum X and Y coordinates
 			minX := min(origin.OffsetX, destination.OffsetX)
 			minY := min(origin.OffsetY, destination.OffsetY)
 			maxX := max(endX1, endX2)
 			maxY := max(endY1, endY2)
 
+			// Calculate the dimensions of the merged grid
 			width := maxX - minX
 			height := maxY - minY
+			//pf.logger.Debug(fmt.Sprintf("Merged grid width: %d, merged grid height: %d", width, height))
 
+			// Create the result grid with the calculated dimensions
 			resultGrid := make([][]game.CollisionType, height)
 			for i := range resultGrid {
 				resultGrid[i] = make([]game.CollisionType, width)
 			}
 
-			// Let's copy both grids into the result grid
+			// Copy the origin and destination grids into the result grid with the correct offsets
 			copyGrid(resultGrid, origin.CollisionGrid, origin.OffsetX-minX, origin.OffsetY-minY)
 			copyGrid(resultGrid, destination.CollisionGrid, destination.OffsetX-minX, destination.OffsetY-minY)
+
+			// Adjust the Y-coordinate of the destination grid
+			for y := 0; y < len(destination.CollisionGrid); y++ {
+				for x := 0; x < len(destination.CollisionGrid[0]); x++ {
+					resultGrid[destination.OffsetY-minY+y][destination.OffsetX-minX+x] = destination.CollisionGrid[y][x]
+				}
+			}
 
 			grid := game.NewGrid(resultGrid, minX, minY)
 
@@ -167,6 +185,7 @@ func (pf *PathFinder) GetClosestWalkablePath(dest data.Position) (Path, int, boo
 func (pf *PathFinder) GetClosestWalkablePathFrom(from, dest data.Position) (Path, int, bool) {
 	a := pf.data.AreaData
 	if a.IsWalkable(dest) || !a.IsInside(dest) {
+		slog.Any("PathFinder.GetClosestWalkablePathFrom", "Destination is already walkable or outside the area")
 		path, distance, found := pf.GetPath(dest)
 		if found {
 			return path, distance, found
