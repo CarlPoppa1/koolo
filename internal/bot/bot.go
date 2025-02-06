@@ -129,6 +129,11 @@ func (b *Bot) Run(ctx context.Context, firstRun bool, runs []run.Run) error {
 					action.HidePortraits()
 					time.Sleep(150 * time.Millisecond)
 				}
+				// Close chat if somehow was opened (prevention)
+				if b.ctx.Data.OpenMenus.ChatOpen {
+					b.ctx.HID.PressKey(b.ctx.Data.KeyBindings.Chat.Key1[0])
+					time.Sleep(150 * time.Millisecond)
+				}
 				b.ctx.SwitchPriority(botCtx.PriorityHigh)
 
 				// Area correction (only check if enabled)
@@ -168,9 +173,11 @@ func (b *Bot) Run(ctx context.Context, firstRun bool, runs []run.Run) error {
 
 					b.ctx.Logger.Info("Going back to town", "reason", reason)
 
-					action.InRunReturnTownRoutine()
+					if err = action.InRunReturnTownRoutine(); err != nil {
+						b.ctx.Logger.Warn("Failed returning town.. will try again shortly", "error", err)
+						time.Sleep(500 * time.Millisecond)
+					}
 				}
-
 				b.ctx.SwitchPriority(botCtx.PriorityNormal)
 			}
 		}
