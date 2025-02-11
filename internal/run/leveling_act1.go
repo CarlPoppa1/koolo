@@ -2,6 +2,7 @@ package run
 
 import (
 	"fmt"
+
 	"github.com/hectorgimenez/d2go/pkg/data"
 	"github.com/hectorgimenez/d2go/pkg/data/area"
 	"github.com/hectorgimenez/d2go/pkg/data/difficulty"
@@ -25,6 +26,7 @@ func (a Leveling) act1() error {
 	}
 
 	running = true
+
 	if lvl, _ := a.ctx.Data.PlayerUnit.FindStat(stat.Level, 0); lvl.Value == 1 {
 		a.ctx.CharacterCfg.Game.Difficulty = difficulty.Normal
 		a.ctx.CharacterCfg.MaxGameLength = 750
@@ -57,22 +59,30 @@ func (a Leveling) act1() error {
 	if lvl, _ := a.ctx.Data.PlayerUnit.FindStat(stat.Level, 0); lvl.Value < 3 {
 		a.ctx.Logger.Debug("Current lvl %s under 3 - Leveling in Den of Evil")
 		a.denOfEvil()
-		fmt.Errorf("den of Evil finished")
+		return fmt.Errorf("den of Evil finished")
 	}
+	// do Cold Plains until level 7
 	if lvl, _ := a.ctx.Data.PlayerUnit.FindStat(stat.Level, 0); lvl.Value < 6 {
-		a.ctx.Logger.Debug("Current lvl %s under 6 - Leveling in Stony Field")
-		a.stonyField()
-		fmt.Errorf("stony field finished")
+		a.coldPlains()
+		return fmt.Errorf("Cold Plains finished")
 	}
 
 	// do Countess Runs until level 14
 	if lvl, _ := a.ctx.Data.PlayerUnit.FindStat(stat.Level, 0); lvl.Value < 14 {
 		a.countess()
-		fmt.Errorf("Countess run finished")
+		return fmt.Errorf("Countess finished")
+	}
+
+	if !a.isCainInTown() && !a.ctx.Data.Quests[quest.Act1TheSearchForCain].Completed() {
+		a.deckardCain()
 	}
 
 	if a.ctx.Data.Quests[quest.Act1SistersToTheSlaughter].Completed() {
 		action.ReturnTown()
+		// Do Den of Evil if not complete before moving acts
+		if !a.ctx.Data.Quests[quest.Act1DenOfEvil].Completed() {
+			a.denOfEvil()
+		}
 		action.InteractNPC(npc.Warriv)
 		a.ctx.HID.KeySequence(win.VK_HOME, win.VK_DOWN, win.VK_RETURN)
 
@@ -124,8 +134,20 @@ func (a Leveling) stonyField() error {
 	if err != nil {
 		return err
 	}
+	// Find the Cairn Stone Alpha
+	cairnStone := data.Object{}
+	for _, o := range a.ctx.Data.Objects {
+		if o.Name == object.CairnStoneAlpha {
+			cairnStone = o
+		}
+	}
 
-	return action.ClearCurrentLevel(false, data.MonsterAnyFilter())
+	// Move to the cairnStone
+	action.MoveToCoords(cairnStone.Position)
+
+	return action.ClearAreaAroundPlayer(10, data.MonsterEliteFilter())
+
+	//return action.ClearCurrentLevel(false, data.MonsterAnyFilter())
 }
 
 func (a Leveling) isCainInTown() bool {
@@ -136,51 +158,53 @@ func (a Leveling) isCainInTown() bool {
 
 func (a Leveling) deckardCain() error {
 	action.WayPoint(area.RogueEncampment)
-	err := action.WayPoint(area.DarkWood)
-	if err != nil {
-		return err
-	}
-
-	err = action.MoveTo(func() (data.Position, bool) {
-		for _, o := range a.ctx.Data.Objects {
-			if o.Name == object.InifussTree {
-				return o.Position, true
-			}
+	a.ctx.Logger.Debug(fmt.Sprintf("Current quest status: %d", quest.Status(quest.Act1TheSearchForCain)))
+	if a.ctx.Data.Quests[quest.Act1TheSearchForCain].HasStatus(quest.StatusQuestNotStarted) {
+		err := action.WayPoint(area.DarkWood)
+		if err != nil {
+			return err
 		}
-		return data.Position{}, false
-	})
-	if err != nil {
-		return err
-	}
 
-	action.ClearAreaAroundPlayer(30, data.MonsterAnyFilter())
-
-	obj, found := a.ctx.Data.Objects.FindOne(object.InifussTree)
-	if !found {
-		a.ctx.Logger.Debug("InifussTree not found")
-	}
-
-	err = action.InteractObject(obj, func() bool {
-		updatedObj, found := a.ctx.Data.Objects.FindOne(object.InifussTree)
-		if found {
-			if !updatedObj.Selectable {
-				a.ctx.Logger.Debug("Interacted with InifussTree")
+		err = action.MoveTo(func() (data.Position, bool) {
+			for _, o := range a.ctx.Data.Objects {
+				if o.Name == object.InifussTree {
+					return o.Position, true
+				}
 			}
-			return !updatedObj.Selectable
+			return data.Position{}, false
+		})
+		if err != nil {
+			return err
 		}
-		return false
-	})
-	if err != nil {
-		return err
+
+		action.ClearAreaAroundPlayer(30, data.MonsterAnyFilter())
+
+		obj, found := a.ctx.Data.Objects.FindOne(object.InifussTree)
+		if !found {
+			a.ctx.Logger.Debug("InifussTree not found")
+		}
+
+		err = action.InteractObject(obj, func() bool {
+			updatedObj, found := a.ctx.Data.Objects.FindOne(object.InifussTree)
+			if found {
+				if !updatedObj.Selectable {
+					a.ctx.Logger.Debug("Interacted with InifussTree")
+				}
+				return !updatedObj.Selectable
+			}
+			return false
+		})
+		if err != nil {
+			return err
+		}
+
+		action.ItemPickup(0)
+		action.ReturnTown()
+		action.InteractNPC(npc.Akara)
+		a.ctx.HID.PressKey(win.VK_ESCAPE)
 	}
-
-	action.ItemPickup(0)
-	action.ReturnTown()
-	action.InteractNPC(npc.Akara)
-	a.ctx.HID.PressKey(win.VK_ESCAPE)
-
-	//Reuse Tristram Run actions
-	err = Tristram{}.Run()
+	//Reuse Tristram Run actions Run actions
+	err := a.tristram()
 	if err != nil {
 		return err
 	}
@@ -189,7 +213,8 @@ func (a Leveling) deckardCain() error {
 }
 
 func (a Leveling) tristram() error {
-	return Tristram{}.Run()
+	Tristram{}.Run()
+	return nil
 }
 
 func (a Leveling) countess() error {
