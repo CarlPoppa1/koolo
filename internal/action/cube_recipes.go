@@ -259,7 +259,7 @@ var (
 		// Safety Shield
 		{
 			Name:             "Safety Shield",
-			Items:            []string{"EthRune", "PerfectEmerald", "Jewel"},
+			Items:            []string{"NefRune", "PerfectEmerald", "Jewel"},
 			PurchaseRequired: true,
 			PurchaseItems:    []string{"KiteShield", "DragonShield", "Monarch"},
 		},
@@ -267,7 +267,7 @@ var (
 		// Safety Armor
 		{
 			Name:             "Safety Armor",
-			Items:            []string{"NefRune", "PerfectEmerald", "Jewel"},
+			Items:            []string{"EthRune", "PerfectEmerald", "Jewel"},
 			PurchaseRequired: true,
 			PurchaseItems:    []string{"BreastPlate", "Curiass", "GreatHauberk"},
 		},
@@ -377,7 +377,7 @@ func CubeRecipes() error {
 
 		continueProcessing := true
 		for continueProcessing {
-			if items, hasItems := hasItemsForRecipe(ctx, itemsInStash, recipe); hasItems {
+			if items, hasItems := hasItemsForRecipe(ctx, recipe); hasItems {
 
 				// TODO: Check if we have the items in our storage and if not, purchase them, else take the item from the storage
 				if recipe.PurchaseRequired {
@@ -406,7 +406,7 @@ func CubeRecipes() error {
 					return err
 				}
 
-				// Get a list of items that are in our invetory
+				// Get a list of items that are in our inventory
 				itemsInInv := ctx.Data.Inventory.ByLocation(item.LocationInventory)
 
 				stashingRequired := false
@@ -416,6 +416,9 @@ func CubeRecipes() error {
 				for _, item := range itemsInInv {
 					// If item is not in the protected slots, check if it should be stashed
 					if ctx.CharacterCfg.Inventory.InventoryLock[item.Position.Y][item.Position.X] == 1 {
+						if item.Name == "Key" {
+							continue
+						}
 
 						shouldStash, reason, _ := shouldStashIt(item, false)
 
@@ -470,8 +473,10 @@ func CubeRecipes() error {
 	return nil
 }
 
-func hasItemsForRecipe(ctx *context.Status, items []data.Item, recipe CubeRecipe) ([]data.Item, bool) {
+func hasItemsForRecipe(ctx *context.Status, recipe CubeRecipe) ([]data.Item, bool) {
 
+	ctx.RefreshGameData()
+	items := ctx.Data.Inventory.ByLocation(item.LocationStash, item.LocationSharedStash)
 	// Special handling for "Reroll GrandCharms" recipe
 	if recipe.Name == "Reroll GrandCharms" {
 		return hasItemsForGrandCharmReroll(ctx, items)
@@ -524,6 +529,11 @@ func hasItemsForGrandCharmReroll(ctx *context.Status, items []data.Item) ([]data
 				grandCharm = itm
 			}
 		} else if isPerfectGem(itm) && len(perfectGems) < 3 {
+			// Skip perfect amethysts and rubies if configured
+			if (ctx.CharacterCfg.CubeRecipes.SkipPerfectAmethysts && itm.Name == "PerfectAmethyst") ||
+				(ctx.CharacterCfg.CubeRecipes.SkipPerfectRubies && itm.Name == "PerfectRuby") {
+				continue
+			}
 			perfectGems = append(perfectGems, itm)
 		}
 
