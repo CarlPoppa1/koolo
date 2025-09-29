@@ -307,6 +307,7 @@ func (mng *SupervisorManager) buildSupervisor(supervisorName string, logger *slo
 	bot := NewBot(ctx.Context, muleManager)
 
 	statsHandler := NewStatsHandler(supervisorName, logger)
+	mng.eventListener.Register(statsHandler.Handle)
 	supervisor, err := NewSinglePlayerSupervisor(supervisorName, bot, statsHandler)
 
 	if err != nil {
