@@ -151,60 +151,24 @@ func (mng *SupervisorManager) StopAll() {
 func (mng *SupervisorManager) Stop(supervisor string) {
 	s, found := mng.supervisors[supervisor]
 	if found {
-		// Capture switch info before anything else
-		var nextCharacter string
-		var originalCharacter string
-		if ctx := s.GetContext(); ctx != nil {
-			if ctx.CurrentGame != nil && ctx.CurrentGame.SwitchToCharacter != "" {
-				nextCharacter = ctx.CurrentGame.SwitchToCharacter
-				mng.logger.Info("Character switch requested",
-					slog.String("from", supervisor),
-					slog.String("to", nextCharacter))
-			}
-		}
-
 		// Log the stop sequence
-		mng.logger.Info("Starting supervisor stop sequence",
-			slog.String("supervisor", supervisor),
-			slog.String("nextCharacter", nextCharacter))
+		mng.logger.Info("Stopping supervisor instance", slog.String("supervisor", supervisor))
 
-		// Stop the Supervisor
+		// Stop the Supervisor's internal loops and kill the client if configured
 		s.Stop()
 
-		// Delete from the list of Supervisors
+		// Delete from the list of active Supervisors
 		delete(mng.supervisors, supervisor)
 
+		// Stop the crash detector associated with it
 		if cd, ok := mng.crashDetectors[supervisor]; ok {
 			cd.Stop()
 			delete(mng.crashDetectors, supervisor)
 		}
 
-		// If we need to restart with a different character
-		if nextCharacter != "" {
-			mng.logger.Info("Waiting before starting next character",
-				slog.String("character", nextCharacter))
-
-			time.Sleep(5 * time.Second) // Wait before starting new character
-
-			// Start in the same goroutine to ensure proper sequencing
-			if err := mng.Start(nextCharacter, false); err != nil {
-				mng.logger.Error("Failed to start next character",
-					slog.String("character", nextCharacter),
-					slog.String("error", err.Error()))
-			} else {
-				mng.logger.Info("Successfully started next character",
-					slog.String("character", nextCharacter))
-
-				if newSup, exists := mng.supervisors[nextCharacter]; exists {
-					if ctx := newSup.GetContext(); ctx != nil && ctx.CurrentGame != nil {
-						ctx.CurrentGame.SwitchToCharacter = ""
-						ctx.CurrentGame.OriginalCharacter = originalCharacter
-						ctx.RestartWithCharacter = ""
-					}
-				}
-			}
-		}
-
+		// The logic to start the next character has been removed from here.
+		// The restartFunc is now the single source of truth for this,
+		// preventing the mule from restarting itself.
 	}
 }
 
