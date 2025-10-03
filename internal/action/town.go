@@ -1,12 +1,14 @@
 package action
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/hectorgimenez/d2go/pkg/data/item"
 	"github.com/hectorgimenez/d2go/pkg/data/skill"
 	"github.com/hectorgimenez/koolo/internal/action/step"
+	"github.com/hectorgimenez/koolo/internal/config"
 	"github.com/hectorgimenez/koolo/internal/context"
 	"github.com/hectorgimenez/koolo/internal/utils"
 )
@@ -37,9 +39,48 @@ func StashFull() bool {
 func PreRun(firstRun bool) error {
 	ctx := context.Get()
 
+	// Muling logic for the main farmer character
 	if ctx.CharacterCfg.Muling.Enabled && ctx.CharacterCfg.Muling.ReturnTo == "" {
-		if StashFull() {
-			return ErrMulingNeeded
+		isStashFull := StashFull()
+
+		if isStashFull {
+			muleProfiles := ctx.CharacterCfg.Muling.MuleProfiles
+			muleIndex := ctx.CharacterCfg.MulingState.CurrentMuleIndex
+
+			if muleIndex >= len(muleProfiles) {
+				ctx.Logger.Error("All mules are full! Cannot stash more items. Stopping.")
+				ctx.StopSupervisor()
+				return errors.New("all mules are full")
+			}
+
+			nextMule := muleProfiles[muleIndex]
+			ctx.Logger.Info("Stash is full, preparing to switch to mule.", "mule", nextMule, "index", muleIndex)
+
+			// Increment the index for the next time we come back
+			ctx.CharacterCfg.MulingState.CurrentMuleIndex++
+
+			// CRITICAL: Save the updated index to the config file BEFORE switching
+			if err := config.SaveSupervisorConfig(ctx.Name, ctx.CharacterCfg); err != nil {
+				ctx.Logger.Error("Failed to save muling state before switching", "error", err)
+				return err // Stop if we can't save state
+			}
+
+			// Trigger the character switch
+			ctx.CurrentGame.SwitchToCharacter = nextMule
+			ctx.RestartWithCharacter = nextMule
+			ctx.CleanStopRequested = true
+			ctx.StopSupervisor()
+			return ErrMulingNeeded // Stop current execution
+		} else {
+			// If stash is NOT full and the index is not 0, it means muling just finished.
+			// Reset the index and save.
+			if ctx.CharacterCfg.MulingState.CurrentMuleIndex != 0 {
+				ctx.Logger.Info("Muling process complete, resetting mule index.")
+				ctx.CharacterCfg.MulingState.CurrentMuleIndex = 0
+				if err := config.SaveSupervisorConfig(ctx.Name, ctx.CharacterCfg); err != nil {
+					ctx.Logger.Error("Failed to reset muling state", "error", err)
+				}
+			}
 		}
 	}
 
@@ -55,8 +96,6 @@ func PreRun(firstRun bool) error {
 	if firstRun && !isLevelingChar {
 		Stash(false)
 	}
-
-	UpdateQuestLog()
 
 	if !isLevelingChar {
 		// Store items that need to be left unidentified
