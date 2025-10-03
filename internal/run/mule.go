@@ -52,7 +52,13 @@ func (m Mule) Run() error {
 	ctx := context.Get()
 
 	returnToChar := ctx.CharacterCfg.Muling.ReturnTo
+	muleProfiles := ctx.CharacterCfg.Muling.MuleProfiles
 	ctx.Logger.Info("Starting mule run", "muleCharacter", ctx.Name)
+
+	//	if len(muleProfiles) == 0 {
+	//		ctx.Logger.Error("Mule run started, but no 'muleProfiles' are configured in settings. Stopping.")
+	//		return nil // Stop cleanly
+	//	}
 
 	if returnToChar == "" {
 		ctx.Logger.Error("Mule run started, but 'ReturnTo' is not configured in settings. Stopping.")
@@ -62,8 +68,30 @@ func (m Mule) Run() error {
 	// Run initial setup.
 	if err := m.initialSetup(ctx); err != nil {
 		ctx.Logger.Error("Mule initial setup failed, switching back to original character.", "error", err)
-	} else {
+		// Even if setup fails, we should try to switch back
+		ctx.CurrentGame.SwitchToCharacter = returnToChar
+		ctx.RestartWithCharacter = returnToChar
+		ctx.CleanStopRequested = true
+		ctx.StopSupervisor()
+		return err
+	}
 
+	// Check if the current mule's private stash is already full
+	if isPrivateStashFull(ctx) {
+		ctx.Logger.Info("Current mule's stash is full, checking for the next one.")
+		ctx.CurrentGame.CurrentMuleIndex++
+		if ctx.CurrentGame.CurrentMuleIndex < len(muleProfiles) {
+			// We have another mule to switch to
+			nextMule := muleProfiles[ctx.CurrentGame.CurrentMuleIndex]
+			ctx.Logger.Info("Switching to next mule", "mule", nextMule)
+			ctx.CurrentGame.SwitchToCharacter = nextMule
+		} else {
+			// No more mules, return to the farming character
+			ctx.Logger.Info("All available mules are full, returning to farming character.")
+			ctx.CurrentGame.SwitchToCharacter = returnToChar
+		}
+	} else {
+		// Stash is not full, proceed with muling logic
 		for {
 			movedItemInLoop := false
 
@@ -112,18 +140,36 @@ func (m Mule) Run() error {
 			}
 
 			if !movedItemInLoop {
-				ctx.Logger.Info("Muling complete: No items could be moved in a full cycle.")
+				ctx.Logger.Info("Muling complete: No more items to move in this cycle.")
 				break
 			}
 		}
+
+		// After muling, decide who to switch to
+		if isPrivateStashFull(ctx) {
+			ctx.Logger.Info("Mule is now full, checking for the next mule.")
+			ctx.CurrentGame.CurrentMuleIndex++
+			if ctx.CurrentGame.CurrentMuleIndex < len(muleProfiles) {
+				// We have another mule to switch to
+				nextMule := muleProfiles[ctx.CurrentGame.CurrentMuleIndex]
+				ctx.Logger.Info("Switching to next mule", "mule", nextMule)
+				ctx.CurrentGame.SwitchToCharacter = nextMule
+			} else {
+				ctx.Logger.Info("All available mules are now full, returning to farming character.")
+				ctx.CurrentGame.SwitchToCharacter = returnToChar
+			}
+		} else {
+			// Muling is done and the current mule is not full, return to farmer
+			ctx.Logger.Info("Muling finished, returning to farming character.")
+			ctx.CurrentGame.SwitchToCharacter = returnToChar
+		}
 	}
 
-	ctx.Logger.Info("Preparing to switch back to original character",
+	ctx.Logger.Info("Preparing to switch character",
 		"from", ctx.Name,
-		"to", returnToChar)
+		"to", ctx.CurrentGame.SwitchToCharacter)
 
-	ctx.CurrentGame.SwitchToCharacter = returnToChar
-	ctx.RestartWithCharacter = returnToChar
+	ctx.RestartWithCharacter = ctx.CurrentGame.SwitchToCharacter
 	ctx.CleanStopRequested = true
 
 	if err := ctx.Manager.ExitGame(); err != nil {
@@ -217,4 +263,31 @@ func findInventorySpace(ctx *context.Status, itm data.Item) (data.Position, bool
 		}
 	}
 	return data.Position{}, false
+}
+
+// isPrivateStashFull checks if the personal stash has any 2x2 free space.
+// This is a simple heuristic to determine if the stash is "full".
+func isPrivateStashFull(ctx *context.Status) bool {
+	stash := ctx.Data.Inventory.ByLocation(item.LocationStash)
+	occupied := [10][10]bool{}
+	for _, i := range stash {
+		for y := 0; y < i.Desc().InventoryHeight; y++ {
+			for x := 0; x < i.Desc().InventoryWidth; x++ {
+				if i.Position.Y+y < 10 && i.Position.X+x < 10 {
+					occupied[i.Position.Y+y][i.Position.X+x] = true
+				}
+			}
+		}
+	}
+
+	// Check for a 2x2 free space
+	for y := 0; y <= 8; y++ {
+		for x := 0; x <= 8; x++ {
+			if !occupied[y][x] && !occupied[y+1][x] && !occupied[y][x+1] && !occupied[y+1][x+1] {
+				return false // Found a 2x2 space, so not full
+			}
+		}
+	}
+
+	return true // No 2x2 space found
 }
