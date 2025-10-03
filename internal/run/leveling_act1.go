@@ -28,6 +28,8 @@ func (a Leveling) act1() error {
 		return nil
 	}
 
+	action.UpdateQuestLog()
+
 	// Check player level and set configuration for level 1
 	lvl, _ := a.ctx.Data.PlayerUnit.FindStat(stat.Level, 0)
 	if lvl.Value == 1 {
@@ -146,7 +148,7 @@ func (a Leveling) act1() error {
 	}
 
 	// Countess farming for runes
-	if a.ctx.CharacterCfg.Game.Difficulty == difficulty.Normal && a.ctx.Data.Quests[quest.Act1TheSearchForCain].Completed() && lvl.Value >= 6 && lvl.Value < 12 {
+	if a.ctx.CharacterCfg.Game.Difficulty == difficulty.Normal && a.ctx.Data.Quests[quest.Act1TheSearchForCain].Completed() && lvl.Value >= 6 && (lvl.Value < 12 || lvl.Value < 16 && (a.ctx.CharacterCfg.Character.Class == "paladin" || a.ctx.CharacterCfg.Character.Class == "necromancer")) {
 		a.ctx.Logger.Info("Farming Countess for runes.")
 		if a.ctx.CharacterCfg.Character.Class == "sorceress_leveling" {
 			a.ctx.CharacterCfg.Character.ClearPathDist = 15
