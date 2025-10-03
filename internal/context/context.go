@@ -81,6 +81,7 @@ type CurrentGameHelper struct {
 	SwitchToCharacter string
 	// Used to store the original character name when muling, so we can switch back.
 	OriginalCharacter string
+	CurrentMuleIndex  int
 	ShouldCheckStash  bool
 	StashFull         bool
 }
