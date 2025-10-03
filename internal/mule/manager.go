@@ -21,11 +21,12 @@ func NewManager(logger *slog.Logger) *Manager {
 // ShouldMule checks if the stash is full and muling is required.
 func (m *Manager) ShouldMule(stashFull bool, characterName string) (bool, string) {
 	for _, char := range config.Characters {
-
-		if char.CharacterName == characterName && char.Muling.Enabled && char.Muling.SwitchToMule != "" {
+		// Updated logic: Check if MuleProfiles list is not empty instead of SwitchToMule
+		if char.CharacterName == characterName && char.Muling.Enabled && len(char.Muling.MuleProfiles) > 0 {
 			if stashFull {
-				m.logger.Info("Stash is full, muling is required.", "switchToMule", char.Muling.SwitchToMule)
-				return true, char.Muling.SwitchToMule
+				firstMule := char.Muling.MuleProfiles[0]
+				m.logger.Info("Stash is full, muling is required.", "switchToMule", firstMule)
+				return true, firstMule
 			}
 		}
 	}
