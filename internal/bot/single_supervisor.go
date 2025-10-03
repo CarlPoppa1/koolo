@@ -13,7 +13,8 @@ import (
 	"github.com/hectorgimenez/d2go/pkg/data/difficulty"
 	"github.com/hectorgimenez/d2go/pkg/data/skill"
 	"github.com/hectorgimenez/d2go/pkg/data/stat"
-	"github.com/hectorgimenez/koolo/internal/action"
+
+	//"github.com/hectorgimenez/koolo/internal/action"
 	"github.com/hectorgimenez/koolo/internal/config"
 	ct "github.com/hectorgimenez/koolo/internal/context"
 	"github.com/hectorgimenez/koolo/internal/event"
@@ -302,21 +303,24 @@ func (s *SinglePlayerSupervisor) Start() error {
 			} else {
 				s.bot.ctx.Logger.Info(fmt.Sprintf("Bot run finished with error: %s. Initiating game exit and cooldown.", err.Error()))
 			}
-			if errors.Is(err, action.ErrMulingNeeded) {
-				muleCharacter := s.bot.ctx.CharacterCfg.Muling.SwitchToMule
-				s.bot.ctx.Logger.Info(fmt.Sprintf("Muling required, switching to character %s.", muleCharacter))
-
-				// Set up the character switch before stopping
-				s.bot.ctx.CurrentGame.SwitchToCharacter = muleCharacter
-				s.bot.ctx.RestartWithCharacter = muleCharacter
-				s.bot.ctx.CleanStopRequested = true
-
-				s.bot.ctx.Logger.Info("Stopping supervisor for muling",
-					slog.String("from", s.name),
-					slog.String("to", muleCharacter))
-				s.bot.ctx.StopSupervisor()
-				return nil
-			}
+			//if errors.Is(err, action.ErrMulingNeeded) {
+			//	if len(s.bot.ctx.CharacterCfg.Muling.MuleProfiles) > 0 {
+			//		// Get the first mule from the list
+			//		muleCharacter := s.bot.ctx.CharacterCfg.Muling.MuleProfiles[0]
+			//		s.bot.ctx.Logger.Info(fmt.Sprintf("Muling required, switching to character %s.", muleCharacter))
+			//
+			//					s.bot.ctx.CurrentGame.SwitchToCharacter = muleCharacter
+			//					s.bot.ctx.RestartWithCharacter = muleCharacter
+			//					s.bot.ctx.CleanStopRequested = true
+			//					s.bot.ctx.CurrentGame.CurrentMuleIndex = 0 // Reset the index
+			//
+			//					s.bot.ctx.Logger.Info("Stopping supervisor for muling",
+			//						slog.String("from", s.name),
+			//						slog.String("to", muleCharacter))
+			//					s.bot.ctx.StopSupervisor()
+			//					return nil
+			//				}
+			//			}
 
 			if exitErr := s.bot.ctx.Manager.ExitGame(); exitErr != nil {
 				s.bot.ctx.Logger.Error(fmt.Sprintf("Error trying to exit game: %s", exitErr.Error()))
