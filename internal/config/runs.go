@@ -41,6 +41,7 @@ var AvailableRuns = map[Run]interface{}{
 	MausoleumRun:        nil,
 	SummonerRun:         nil,
 	DurielRun:           nil,
+	MuleRun:             nil,
 	MephistoRun:         nil,
 	TravincalRun:        nil,
 	EldritchRun:         nil,

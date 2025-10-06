@@ -7,6 +7,7 @@ import (
 	"github.com/hectorgimenez/d2go/pkg/data"
 	"github.com/hectorgimenez/d2go/pkg/data/item"
 	"github.com/hectorgimenez/koolo/internal/action"
+	"github.com/hectorgimenez/koolo/internal/config"
 	"github.com/hectorgimenez/koolo/internal/context"
 	"github.com/hectorgimenez/koolo/internal/game"
 	"github.com/hectorgimenez/koolo/internal/ui"
@@ -29,7 +30,7 @@ func NewMule() Mule {
 }
 
 func (m Mule) Name() string {
-	return "Mule"
+	return string(config.MuleRun)
 }
 
 // initialSetup ensures the bot is in a valid state to start muling.
