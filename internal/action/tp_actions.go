@@ -171,22 +171,21 @@ func UsePortalFrom(owner string) error {
 	ctx := context.Get()
 	ctx.SetLastAction("UsePortalFrom")
 
-	// Proactive death check at the start of the action
 	if err := checkPlayerDeathForTP(ctx); err != nil {
 		return err
 	}
 
-	// Only proceed if the player is in town
 	if !ctx.Data.PlayerUnit.Area.IsTown() {
 		return nil
 	}
 
 	var portalObj *data.Object
+
 	for i := range ctx.Data.Objects {
-		obj := &ctx.Data.Objects[i] // Get the address of the object in the slice
+		obj := &ctx.Data.Objects[i]
 
 		if obj.IsPortal() && obj.Owner == owner {
-			portalObj = obj // Assign the pointer (*data.Object)
+			portalObj = obj
 			break
 		}
 	}
@@ -195,69 +194,52 @@ func UsePortalFrom(owner string) error {
 		return errors.New("portal not found")
 	}
 
-	// --- Retry Mechanism ---
-	const maxAttempts = 5
+	const maxAttempts = 8
 	for interactionAttempts := 1; interactionAttempts <= maxAttempts; interactionAttempts++ {
-		// Attempt to interact with the portal
 		err := InteractObjectByID(portalObj.ID, func() bool {
-			// Check for death during interaction callback
 			if errCheck := checkPlayerDeathForTP(ctx); errCheck != nil {
 				return false
 			}
 
-			// Check if transition to non-town area has occurred
+			utils.Sleep(100)
+
 			if !ctx.Data.PlayerUnit.Area.IsTown() {
-				// Ensure area data is synced after portal transition
 				utils.Sleep(500)
 				ctx.RefreshGameData()
-				// Check for death after refreshing game data
+
 				if errCheck := checkPlayerDeathForTP(ctx); errCheck != nil {
 					return false
 				}
 
 				if err := ensureAreaSync(ctx, ctx.Data.PlayerUnit.Area); err != nil {
-					// Log the sync error but return true to stop the interaction loop
 					ctx.Logger.Error("Area sync failed after portal use: %v", err)
 					return false
 				}
 
-				// Success: Transition complete and synced
 				return true
 			}
 
-			// Still in town, continue interaction loop
 			return false
 		})
 
-		// Check if the interaction was successful (portal used and area changed)
 		if err == nil && !ctx.Data.PlayerUnit.Area.IsTown() {
-			// Portal successfully used and area changed, exit the function
 			return nil
 		}
 
-		// Interaction failed or did not result in an area change: prepare for retry
-
-		// Log the failure
 		if err != nil {
 			ctx.Logger.Debug("Failed to interact with portal (attempt %d): %v", interactionAttempts, err)
 		} else {
-			ctx.Logger.Debug("Portal interaction attempt %d failed to change area.", interactionAttempts)
+			ctx.Logger.Debug("Portal interaction attempt %d failed to change area. Retrying.", interactionAttempts)
 		}
 
-		// If it's not the last attempt, perform random movement to unstick and retry
 		if interactionAttempts < maxAttempts {
-			ctx.Logger.Debug("Performing random movement to reset position for portal retry.")
-			// Use random movement on every third failure, or maybe every failure, depending on desired aggression
-			if interactionAttempts%2 == 1 { // Random move on 1st, 3rd, 5th attempt
-				ctx.PathFinder.RandomMovement()
-				utils.Sleep(1000) // Sleep to allow movement to complete
-			} else {
-				// Short sleep between attempts
-				utils.Sleep(200)
-			}
+			ctx.Logger.Debug("Performing random movement to reset position for portal retry #%d.", interactionAttempts)
+
+			ctx.PathFinder.RandomMovement()
+
+			utils.Sleep(1500)
 		}
 	}
 
-	// If all attempts fail
 	return errors.New("failed to use portal after multiple attempts")
 }
