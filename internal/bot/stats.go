@@ -127,9 +127,9 @@ type RunStats struct {
 type CharacterOverview struct {
 	Class           string
 	Level           int
-	Experience      int
-	LastExp         int
-	NextExp         int
+	Experience      int64
+	LastExp         int64
+	NextExp         int64
 	Difficulty      string
 	Area            string
 	Life            int

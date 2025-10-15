@@ -400,8 +400,8 @@ func (s *HttpServer) getStatusData() IndexData {
 		// Enrich with lightweight live character overview for UI
 		if data := s.manager.GetData(supervisorName); data != nil {
 			// Defaults
-			var lvl, exp, life, maxLife, mana, maxMana, mf, gold, gf int
-			var lastExp, nextExp int
+			var lvl, life, maxLife, mana, maxMana, mf, gf, gold int
+			var exp, lastExp, nextExp int64
 			var fr, cr, lr, pr int
 			var mfr, mcr, mlr, mpr int
 
@@ -409,13 +409,13 @@ func (s *HttpServer) getStatusData() IndexData {
 				lvl = v.Value
 			}
 			if v, ok := data.PlayerUnit.FindStat(stat.Experience, 0); ok {
-				exp = v.Value
+				exp = int64(v.Value)
 			}
 			if v, ok := data.PlayerUnit.FindStat(stat.LastExp, 0); ok {
-				lastExp = v.Value
+				lastExp = int64(v.Value)
 			}
 			if v, ok := data.PlayerUnit.FindStat(stat.NextExp, 0); ok {
-				nextExp = v.Value
+				nextExp = int64(v.Value)
 			}
 			if v, ok := data.PlayerUnit.FindStat(stat.Life, 0); ok {
 				life = v.Value
