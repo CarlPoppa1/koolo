@@ -228,8 +228,6 @@ func UsePortalFrom(owner string) error {
 
 		if err != nil {
 			ctx.Logger.Debug("Failed to interact with portal (attempt %d): %v", interactionAttempts, err)
-		} else {
-			ctx.Logger.Debug("Portal interaction attempt %d failed to change area. Retrying.", interactionAttempts)
 		}
 
 		if interactionAttempts < maxAttempts {
