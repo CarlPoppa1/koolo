@@ -274,12 +274,12 @@ func PlayerScore(itm data.Item) map[item.LocationType]float64 {
 	return scores
 }
 func calculateGeneralScore(itm data.Item) float64 {
-	//ctx := context.Get()
 
 	itemName := itm.Name
 	if itm.IsRuneword {
 		itemName = item.Name(itm.RunewordName)
 	}
+	ctx := context.Get()
 
 	// Unique item override
 	if score, found := uniqueItemScores[itemName]; found {
@@ -287,6 +287,11 @@ func calculateGeneralScore(itm data.Item) float64 {
 	}
 
 	score := BaseScore
+
+	tierRule, _ := ctx.CharacterCfg.Runtime.Rules.EvaluateTiers(itm, ctx.CharacterCfg.Runtime.TierRules)
+	if tierRule.Tier() > 0 {
+		score = tierRule.Tier()
+	}
 	// Handle Cannot Be Frozen
 	//if !ctx.Data.CanTeleport() && itm.FindStat(stat.CannotbeFrozen, 0) {
 	//	if <add logic to check if another item has CBF> {
@@ -699,4 +704,3 @@ func getMaxSkillTabPage() int {
 
 	return maxPage
 }
-
