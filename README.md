@@ -1,6 +1,6 @@
 We are completing the leveling feature and work on other improvements.
 
-Currently working classes: Sorceress, Paladin, Assassin, Druid and Necromancer
+Currently working classes: Sorceress, Paladin, Assassin, Druid and Necromancer.
 
 As written more detailed below you need to install:
 
