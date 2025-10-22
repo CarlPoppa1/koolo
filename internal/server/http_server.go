@@ -568,6 +568,8 @@ func (s *HttpServer) Listen(port int) error {
 	http.HandleFunc("/togglePause", s.togglePause)
 	http.HandleFunc("/debug", s.debugHandler)
 	http.HandleFunc("/debug-data", s.debugData)
+	http.HandleFunc("/logs", s.logsHandler)
+	http.HandleFunc("/logs-data", s.logsData)
 	http.HandleFunc("/drops", s.drops)
 	http.HandleFunc("/all-drops", s.allDrops)
 	http.HandleFunc("/export-drops", s.exportDrops)
@@ -657,6 +659,112 @@ func (s *HttpServer) debugData(w http.ResponseWriter, r *http.Request) {
 
 func (s *HttpServer) debugHandler(w http.ResponseWriter, r *http.Request) {
 	s.templates.ExecuteTemplate(w, "debug.gohtml", nil)
+}
+
+func (s *HttpServer) logsHandler(w http.ResponseWriter, r *http.Request) {
+	s.templates.ExecuteTemplate(w, "logs.gohtml", nil)
+}
+
+func findLatestSupervisorLog(logDir, supervisorName string) (string, error) {
+	if logDir == "" {
+		logDir = "logs"
+	}
+
+	pattern := filepath.Join(logDir, fmt.Sprintf("Supervisor-log-%s-*.txt", supervisorName))
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		return "", err
+	}
+
+	if len(matches) == 0 {
+		return "", fmt.Errorf("no log files found for supervisor: %s", supervisorName)
+	}
+
+	sort.Slice(matches, func(i, j int) bool {
+		infoI, errI := os.Stat(matches[i])
+		infoJ, errJ := os.Stat(matches[j])
+		if errI != nil || errJ != nil {
+			return false
+		}
+		return infoI.ModTime().After(infoJ.ModTime())
+	})
+
+	return matches[0], nil
+}
+
+func (s *HttpServer) logsData(w http.ResponseWriter, r *http.Request) {
+	supervisorName := r.URL.Query().Get("characterName")
+	if supervisorName == "" {
+		http.Error(w, "characterName parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	offsetStr := r.URL.Query().Get("offset")
+	offset := int64(0)
+	if offsetStr != "" {
+		parsedOffset, err := strconv.ParseInt(offsetStr, 10, 64)
+		if err == nil {
+			offset = parsedOffset
+		}
+	}
+
+	logFile, err := findLatestSupervisorLog(config.Koolo.LogSaveDirectory, supervisorName)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Could not find log file: %v", err), http.StatusNotFound)
+		return
+	}
+
+	fileInfo, err := os.Stat(logFile)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Could not stat log file: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	fileSize := fileInfo.Size()
+
+	if offset > fileSize {
+		offset = 0
+	}
+
+	var contentToReturn string
+	if offset == 0 {
+		fullContent, err := os.ReadFile(logFile)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Could not read log file: %v", err), http.StatusInternalServerError)
+			return
+		}
+		contentToReturn = string(fullContent)
+	} else if offset < fileSize {
+		file, err := os.Open(logFile)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Could not open log file: %v", err), http.StatusInternalServerError)
+			return
+		}
+		defer file.Close()
+
+		_, err = file.Seek(offset, 0)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Could not seek in log file: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		remainingContent := make([]byte, fileSize-offset)
+		_, err = file.Read(remainingContent)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Could not read log file: %v", err), http.StatusInternalServerError)
+			return
+		}
+		contentToReturn = string(remainingContent)
+	}
+
+	response := map[string]interface{}{
+		"content":   contentToReturn,
+		"offset":    fileSize,
+		"isInitial": offset == 0,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
 
 func (s *HttpServer) startSupervisor(w http.ResponseWriter, r *http.Request) {
@@ -1524,4 +1632,3 @@ func (s *HttpServer) resetDroplogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{"status": "ok", "dir": dir, "removed": removed})
 }
-

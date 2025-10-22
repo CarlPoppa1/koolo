@@ -90,7 +90,10 @@ function createCharacterCard(key) {
                         <i class="bi bi-door-open btn-icon"></i>Join Game
                     </button>
                     <button class="btn btn-outline" onclick="location.href='/debug?characterName=${key}'">
-                        <i class="bi bi-bug btn-icon"></i>Debug    
+                        <i class="bi bi-bug btn-icon"></i>Debug
+                    </button>
+                    <button class="btn btn-outline" onclick="location.href='/logs?characterName=${key}'">
+                        <i class="bi bi-file-text btn-icon"></i>Logs
                     </button>
                         <button class="btn btn-outline reset-muling-btn" data-character-name="${key}" title="Reset Muling Progress">
                             <i class="bi bi-arrow-counterclockwise"></i>

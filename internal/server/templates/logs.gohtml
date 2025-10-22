@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log</title>
+    
+    <link rel="stylesheet" href="../assets/css/pico.min.css">
+    <link rel="stylesheet" href="../assets/css/custom.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../assetscss/bootstrap-icons.css">
+
+</head>
+<body>
+    <main class="container">
+        <div class="dashboard-header">
+            <div class="dashboard-title-container">
+                <h1 class="dashboard-title">Log</h1>
+                <span class="version-badge">Development Version</span>
+            </div>
+            <div class="dashboard-controls">
+                <button class="outline" onclick="location.href='/'">
+                    <i class="bi bi-arrow-left-circle btn-icon"></i>Back to Dashboard
+                </button>
+            </div>
+        </div>
+
+        <article id="sticky-controls" style="position: sticky; top: 1rem; z-index: 1000; padding: 1rem; --block-spacing-vertical: 0.5rem;">
+            <div style="display: flex; gap: var(--spacing-md); align-items: baseline; justify-content: space-between; flex-wrap: nowrap;">
+                <div id="left-controls" style="display: flex; flex-wrap: nowrap; gap: var(--spacing-sm); align-items: baseline;">
+                    <div id="supervisor-name" class="character-name" style="white-space: nowrap; font-size: 1rem;">
+                        <span></span>
+                    </div>
+                    <div class="filter-buttons" role="group" style="display: flex; flex-wrap: nowrap; gap: 0.25rem;">
+                        <button class="outline filter-btn debug" data-level="debug" style="padding: 0.35rem 0.6rem; font-size: 0.85rem;">DEBUG</button>
+                        <button class="outline filter-btn info" data-level="info" style="padding: 0.35rem 0.6rem; font-size: 0.85rem;">INFO</button>
+                        <button class="outline filter-btn warn" data-level="warn" style="padding: 0.35rem 0.6rem; font-size: 0.85rem;">WARN</button>
+                        <button class="outline filter-btn error" data-level="error" style="padding: 0.35rem 0.6rem; font-size: 0.85rem;">ERROR</button>
+                    </div>
+                    <div class="search-wrapper" role="group" style="display: flex; gap: var(--spacing-xs); margin-bottom: 0; align-items: baseline; flex-wrap: nowrap;">
+                        <input type="text" id="search-input" placeholder="Search logs..." style="margin-bottom: 0; width: 150px;">
+                        <button class="outline secondary search-btn" id="search-prev-btn" style="padding: 0.35rem 0.6rem; font-size: 0.85rem;">Previous</button>
+                        <button class="outline secondary search-btn" id="search-next-btn" style="padding: 0.35rem 0.6rem; font-size: 0.85rem;">Next</button>
+                        <span id="search-results" style="padding: 0 var(--spacing-sm); align-self: center; min-width: 4ch; text-align: center; white-space: nowrap;">0/0</span>
+                    </div>
+                </div>
+
+                <div id="right-controls" style="display: flex; flex-wrap: nowrap; gap: var(--spacing-sm); align-items: baseline; justify-content: flex-end;">
+                    <div style="margin-bottom: 0; display: flex; gap: var(--spacing-md); align-items: baseline; flex-wrap: nowrap;">
+                        <label for="auto-scroll" style="display: flex; align-items: baseline; white-space: nowrap; margin-bottom: 0; gap: var(--spacing-xs);">
+                            <input type="checkbox" id="auto-scroll" name="auto-scroll" checked style="align-self: center;">
+                            Auto-scroll
+                        </label>
+                        <label for="max-lines" style="display: flex; align-items: baseline; gap: var(--spacing-xs); white-space: nowrap; margin-bottom: 0;">
+                            Lines: 
+                            <input type="number" id="max-lines" name="max-lines" min="0" value="1000" title="Max lines (0 = unlimited)" style="width: 8ch; margin-bottom: 0; padding: var(--spacing-xs);">
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <article id="log-container" style="font-family: 'Consolas', 'Courier New', monospace; font-size: 0.875em; max-height: calc(100vh - 320px); overflow-y: auto; white-space: pre-wrap; word-wrap: break-word;">
+            <div style="color: var(--muted-color);">Loading logs...</div>
+        </article>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+            <button id="copy-data-btn" style="white-space: nowrap;">
+                <i class="bi bi-clipboard btn-icon"></i>
+                Copy Data
+            </button>
+        </div>
+    </main>
+
+    <script src="../assets/js/logs.js"></script>
+</body>
+</html>

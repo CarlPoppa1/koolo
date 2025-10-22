@@ -660,3 +660,113 @@
     background-color: rgba(255, 255, 255, 0.02);
     border-radius: 8px;
 }
+
+/* ========================================
+   LOG PAGE STYLING
+   ======================================== */
+
+/* Filter Button Colors - High Specificity to Override Pico */
+button.outline.filter-btn.active,
+button.outline.filter-btn.active:hover {
+    border-color: var(--primary);
+}
+
+button.outline.filter-btn.debug.active {
+    background-color: #b8b8b8;
+    border-color: #b8b8b8;
+    color: #1a1a1a;
+}
+
+button.outline.filter-btn.debug.active:hover {
+    background-color: #d0d0d0;
+    border-color: #d0d0d0;
+    color: #1a1a1a;
+}
+
+button.outline.filter-btn.info.active {
+    background-color: #6bcbff;
+    border-color: #6bcbff;
+    color: #1a1a1a;
+}
+
+button.outline.filter-btn.info.active:hover {
+    background-color: #8dd7ff;
+    border-color: #8dd7ff;
+    color: #1a1a1a;
+}
+
+button.outline.filter-btn.warn.active {
+    background-color: #ffd93d;
+    border-color: #ffd93d;
+    color: #1a1a1a;
+}
+
+button.outline.filter-btn.warn.active:hover {
+    background-color: #ffe066;
+    border-color: #ffe066;
+    color: #1a1a1a;
+}
+
+button.outline.filter-btn.error.active {
+    background-color: #ff6b6b;
+    border-color: #ff6b6b;
+    color: #fff;
+}
+
+button.outline.filter-btn.error.active:hover {
+    background-color: #ff8787;
+    border-color: #ff8787;
+    color: #fff;
+}
+
+/* Log Line Colors */
+.log-line {
+    padding: 2px 0;
+    line-height: 1.5;
+}
+
+.log-line.trace {
+    color: #888888;
+}
+
+.log-line.debug {
+    color: #b8b8b8;
+}
+
+.log-line.info {
+    color: #6bcbff;
+}
+
+.log-line.warn {
+    color: #ffd93d;
+}
+
+.log-line.error {
+    color: #ff6b6b;
+}
+
+.log-line.hidden {
+    display: none;
+}
+
+/* Search Highlighting */
+.log-line.highlight {
+    background-color: rgba(255, 193, 7, 0.3);
+    border-radius: 4px;
+}
+
+.log-line.current-highlight {
+    background-color: rgba(255, 193, 7, 0.5);
+    border-radius: 4px;
+    animation: highlightPulse 1s ease;
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+}
+
+@keyframes highlightPulse {
+    0%, 100% {
+        background-color: rgba(255, 193, 7, 0.5);
+    }
+    50% {
+        background-color: rgba(255, 193, 7, 0.7);
+    }
+}
