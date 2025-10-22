@@ -67,7 +67,7 @@ func NewLogger(debug bool, logDir, supervisor string) (*slog.Logger, error) {
 			return a
 		},
 	}
-	handler := slog.NewTextHandler(io.MultiWriter(logFileHandler, os.Stdout), opts)
+	handler := slog.NewJSONHandler(io.MultiWriter(logFileHandler, os.Stdout), opts)
 
 	return slog.New(handler), nil
 }
